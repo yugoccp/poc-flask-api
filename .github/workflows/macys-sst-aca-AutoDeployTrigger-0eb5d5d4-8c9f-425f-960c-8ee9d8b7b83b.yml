@@ -1,0 +1,42 @@
+name: Trigger auto deployment for macys-sst-aca
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - '**'
+    - '.github/workflows/macys-sst-aca-AutoDeployTrigger-0eb5d5d4-8c9f-425f-960c-8ee9d8b7b83b.yml'
+
+  # Allow mannually trigger 
+  workflow_dispatch:
+      
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.MACYSSSTACA_AZURE_CREDENTIALS }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          appSourcePath: ${{ github.workspace }} 
+          registryUrl: macyssst.azurecr.io
+          registryUsername: ${{ secrets.MACYSSSTACA_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.MACYSSSTACA_REGISTRY_PASSWORD }}
+          containerAppName: macys-sst-aca
+          resourceGroup: macys-sst-rg
+          imageToBuild: macyssst.azurecr.io/macys-sst-aca:${{ github.sha }}
+          
+
+     
+
