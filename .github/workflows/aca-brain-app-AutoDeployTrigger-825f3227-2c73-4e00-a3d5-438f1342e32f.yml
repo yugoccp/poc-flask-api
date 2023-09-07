@@ -1,0 +1,45 @@
+name: Trigger auto deployment for aca-brain-app
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - '//**'
+    - '.github/workflows/aca-brain-app-AutoDeployTrigger-825f3227-2c73-4e00-a3d5-438f1342e32f.yml'
+
+  # Allow mannually trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ACABRAINAPP_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.ACABRAINAPP_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.ACABRAINAPP_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          appSourcePath: ${{ github.workspace }} 
+          registryUrl: brainplatform.azurecr.io
+          registryUsername: ${{ secrets.ACABRAINAPP_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.ACABRAINAPP_REGISTRY_PASSWORD }}
+          containerAppName: aca-brain-app
+          resourceGroup: Brain
+          imageToBuild: brainplatform.azurecr.io/aca-brain-app:${{ github.sha }}
+          dockerfilePath: Dockerfile
+
+
